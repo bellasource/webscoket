@@ -1,0 +1,68 @@
+<!--
+ * @Author: luobei luobei@seewintech.com
+ * @Date: 2023-07-04 12:01:57
+ * @LastEditors: luobei luobei@seewintech.com
+ * @LastEditTime: 2023-07-04 14:41:00
+ * @FilePath: \websocket\web\index.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div>
+    <button onclick="wsConnect()">连接</button>
+    <button onclick="disReConnect()">断开连接</button>
+  </div>
+  <div>
+    <input id="message">
+    <button onclick="sendMsg()">发送</button>
+  </div>
+  <script src="./ws.js"></script>
+  <script>
+
+    let ws = null
+    function wsConnect() {
+      ws = Ws.create('ws://localhost:8000', {
+        reConnectTime: 4,
+        success: (data) => {
+          console.log('来数据了', data)
+        }
+      }, wsReConnect)
+    }
+
+    function wsReConnect() {
+      // 如果ws不存在，我们就重新创建ws
+      if (!ws) {
+        return wsConnect()
+      }
+
+      if (ws && ws.reconnectingTimer) {
+        clearTimeout(ws.reconnectingTimer)
+        ws.reconnectingTimer = null
+        console.log('重连自定义的函数')
+        wsConnect()
+      }
+    }
+    // 断开连接
+    function disReConnect() {
+      if(ws) {
+        ws.close()
+      }
+    }
+
+    const sendMsg = () => {
+      const messageInput = document.querySelector('#message')
+      ws.sendMsg({
+        mode: 'MESSAGE',
+        msg: messageInput.value,
+      })
+    }
+  </script>
+</body>
+</html>
