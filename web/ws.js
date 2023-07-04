@@ -6,33 +6,28 @@ const configDefault = {
   heartTime: 4000,
   reConnect: true, // 开启重连机制
   reConnectTime: 3, // 重连次数
-  success: null,
+  success: () => {},
   error: () => {},
-  wsReConnect: () => {}
 }
 
 // 继承WebSocket
 // 当new Ws的时候，就相当于new一个WebSocket的对象
 class Ws extends WebSocket {
-  constructor(url, config, wsReConnect) {
+  constructor(url, config) {
     // 将url交给super，则是WebSocket的constructor
     super(url)
     
     // 当实例化重连的时候，还得需要url,名字不能起this.url,因为WebSocket实例中有url
-    this.lastResStamp = new Date()
     this.wsUrl = url
     // 心跳连接定时器
     this.heartBeatTimer = null
     // 重连定时器
     this.reconnectingTimer = null
-    // 连接的回调函数
-    this.wsReConnect = wsReConnect
     this.initParams(config)
     this.initEvent()
   }
   initParams(config) {
-    const deepConfig = JSON.parse(JSON.stringify(config))
-    this.config = Object.assign({...configDefault}, deepConfig)
+    this.config = Object.assign({...configDefault}, config)
     console.log(this.config, '这是配置参数数据')
   }
   initEvent() {
@@ -69,11 +64,10 @@ class Ws extends WebSocket {
   }
 
   handleMessage(data) {
-    console.log(data, '这是data')
     const { mode, msg } = JSON.parse(data.data)
     switch (mode) {
       case WS_MODE.MESSAGE:
-        console.log('--- MESSAGE ---', msg, this.config.success)
+        console.log('--- MESSAGE ---', msg)
         this.config.success(msg)
         break;
       // 此时接收到消息了，客户端和服务端肯定是连接状态，
@@ -83,7 +77,6 @@ class Ws extends WebSocket {
       default:
         break;
     }
-
   }
 
   // 计时器 间隔一定时间，发一次消息，用来判断是否连接已断开
@@ -99,21 +92,19 @@ class Ws extends WebSocket {
         clearInterval(this.heartBeatTimer)
         this.heartBeatTimer = null
       }
-      // MYTODO:模拟连接断开了
-      // setTimeout(()=> {
-      //   this.close()
-      // },2000)
     }, this.config.heartTime)
   }
 
   // 判断是否断线重连
   shouldConnect() {
-    console.log('断线重连外面', this.config)
     if (this.config.reConnect && this.config.reConnectTime > 0) {
-      console.log('重连了吗里面')
       this.config.reConnectTime--
       this.reconnectingTimer = setTimeout(() => {
-        this.wsReConnect()
+        clearTimeout(this.reconnectingTimer)
+        this.reconnectingTimer = null
+        clearInterval(this.heartBeatTimer)
+        this.heartBeatTimer = null
+        this.config.error(this)
       }, 3000)
     } else {
       clearTimeout(this.reconnectingTimer)
@@ -126,8 +117,8 @@ class Ws extends WebSocket {
     this.readyState === 1 && this.send(JSON.stringify(data))
   }
 
-  static create(url, config, wsReConnect) {
-    return new Ws(url, config, wsReConnect)
+  static create(url, config) {
+    return new Ws(url, config)
   }
 
 }

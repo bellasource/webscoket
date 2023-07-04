@@ -2,7 +2,7 @@
  * @Author: luobei luobei@seewintech.com
  * @Date: 2023-07-04 12:01:57
  * @LastEditors: luobei luobei@seewintech.com
- * @LastEditTime: 2023-07-04 14:41:00
+ * @LastEditTime: 2023-07-04 17:20:33
  * @FilePath: \websocket\web\index.html
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -32,22 +32,11 @@
         reConnectTime: 4,
         success: (data) => {
           console.log('来数据了', data)
+        },
+        error: (instance) => {
+          wsConnect()
         }
-      }, wsReConnect)
-    }
-
-    function wsReConnect() {
-      // 如果ws不存在，我们就重新创建ws
-      if (!ws) {
-        return wsConnect()
-      }
-
-      if (ws && ws.reconnectingTimer) {
-        clearTimeout(ws.reconnectingTimer)
-        ws.reconnectingTimer = null
-        console.log('重连自定义的函数')
-        wsConnect()
-      }
+      })
     }
     // 断开连接
     function disReConnect() {
